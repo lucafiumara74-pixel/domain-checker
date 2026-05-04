@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Domain Checker Bot</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f4f4f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    #app {
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      display: flex;
+      flex-direction: column;
+      height: 620px;
+      overflow: hidden;
+    }
+    #header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; }
+    #header h1 { font-size: 15px; font-weight: 600; color: #111; }
+    #header span { font-size: 12px; color: #9ca3af; margin-left: auto; }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg { max-width: 88%; display: flex; flex-direction: column; }
+    .msg.bot { align-self: flex-start; }
+    .msg.user { align-self: flex-end; }
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .bot .bubble {
+      background: #f3f4f6;
+      color: #111;
+      border-radius: 4px 14px 14px 14px;
+    }
+    .user .bubble {
+      background: #2563eb;
+      color: #fff;
+      border-radius: 14px 4px 14px 14px;
+    }
+    .result-card {
+      margin-top: 4px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      max-width: 88%;
+      align-self: flex-start;
+    }
+    .result-card.free { background: #f0fdf4; border: 1px solid #86efac; }
+    .result-card.taken { background: #fef2f2; border: 1px solid #fca5a5; }
+    .domain-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .free .domain-name { color: #15803d; }
+    .taken .domain-name { color: #b91c1c; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .badge.free { background: #bbf7d0; color: #14532d; }
+    .badge.taken { background: #fecaca; color: #7f1d1d; }
+    .card-info { font-size: 12px; color: #6b7280; }
+    .email-form { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+    .email-form label { font-size: 12px; color: #6b7280; }
+    .email-form input {
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      outline: none;
+    }
+    .email-form input:focus { border-color: #2563eb; }
+    .btn-row { display: flex; gap: 6px; }
+    .btn {
+      font-size: 13px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      cursor: pointer;
+      color: #374151;
+    }
+    .btn:hover { background: #f9fafb; }
+    .btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .btn.primary:hover { background: #1d4ed8; }
+    #email-status { font-size: 12px; min-height: 16px; }
+    .typing {
+      display: flex; gap: 4px; align-items: center;
+      padding: 10px 14px;
+      background: #f3f4f6;
+      border-radius: 4px 14px 14px 14px;
+      width: fit-content;
+    }
+    .typing span {
+      width: 7px; height: 7px; border-radius: 50%; background: #9ca3af;
+      animation: blink 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
+    #input-area {
+      border-top: 1px solid #e5e7eb;
+      padding: 12px 14px;
+      display: flex;
+      gap: 8px;
+      background: #fff;
+    }
+    #user-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 22px;
+      font-size: 14px;
+      outline: none;
+    }
+    #user-input:focus { border-color: #2563eb; }
+    #send-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #2563eb;
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    #send-btn:hover { background: #1d4ed8; }
+    #send-btn svg { width: 17px; height: 17px; fill: #fff; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div class="dot"></div>
+    <h1>Domain Checker Bot</h1>
+    <span>WHOIS in tempo reale</span>
+  </div>
+  <div id="messages"></div>
+  <div id="input-area">
+    <input id="user-input" type="text" placeholder="Es: miosito.it oppure brand.com ..." />
+    <button id="send-btn">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const msgsEl = document.getElementById('messages');
+const inputEl = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+let busy = false;
+let lastDomain = '';
+
+// ——— Configura EmailJS ———
+const EMAILJS_SERVICE  = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE = 'YOUR_TEMPLATE_ID';
+const EMAILJS_KEY      = 'YOUR_PUBLIC_KEY';
+// —————————————————————————
+
+function scrollBottom() { msgsEl.scrollTop = msgsEl.scrollHeight; }
+
+function addBubble(role, html) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + role;
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.innerHTML = html;
+  wrap.appendChild(b);
+  msgsEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function addTyping() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg bot';
+  wrap.id = 'typing-indicator';
+  wrap.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  msgsEl.appendChild(wrap);
+  scrollBottom();
+  return wrap;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function emailFormHTML() {
+  return `
+    <div class="email-form">
+      <label>Vuoi ricevere conferma via email?</label>
+      <input type="email" id="notif-email" placeholder="tua@email.com" />
+      <div class="btn-row">
+        <button class="btn primary" onclick="sendEmail()">Invia notifica</button>
+        <button class="btn" onclick="skipEmail()">Salta</button>
+      </div>
+      <div id="email-status"></div>
+    </div>`;
+}
+
+function addResultCard(domain, available) {
+  const wrap = document.createElement('div');
+  wrap.className = 'result-card ' + (available ? 'free' : 'taken');
+  wrap.innerHTML = `
+    <div class="domain-name">${domain}</div>
+    <div class="badge ${available ? 'free' : 'taken'}">${available ? '✓ Disponibile' : '✗ Non disponibile'}</div>
+    <div class="card-info">${available
+      ? 'Il dominio è libero e può essere registrato subito.'
+      : 'Il dominio risulta già registrato da qualcun altro.'}</div>
+    ${available ? emailFormHTML() : ''}
+  `;
+  msgsEl.appendChild(wrap);
+  scrollBottom();
+}
+
+async function checkDomain(domain) {
+  // Chiama il backend Vercel nella cartella /api
+  const res = await fetch(`/api/check?domain=${encodeURIComponent(domain)}`);
+  if (!res.ok) throw new Error('Errore server');
+  return res.json();
+}
+
+async function handleDomain(raw) {
+  let domain = raw.toLowerCase().trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '')
+    .replace(/\s+/g, '');
+
+  if (!/^[a-z0-9][a-z0-9\-]{0,61}(\.[a-z]{2,})+$/i.test(domain)) {
+    addBubble('bot', 'Formato non valido. Prova con <strong>esempio.com</strong> o <strong>miosito.it</strong>.');
+    return;
+  }
+
+  lastDomain = domain;
+  const t = addTyping();
+
+  let result;
+  try {
+    result = await checkDomain(domain);
+  } catch (e) {
+    removeTyping();
+    addBubble('bot', `Non riesco a verificare <strong>${domain}</strong>. Controlla la connessione e riprova.`);
+    return;
+  }
+  removeTyping();
+  addResultCard(domain, result.available);
+
+  if (!result.available) {
+    setTimeout(() => {
+      addBubble('bot', `<strong>${domain}</strong> è già occupato. Vuoi provare una variante o un TLD diverso?`);
+    }, 300);
+  }
+}
+
+window.sendEmail = async function () {
+  const emailEl = document.getElementById('notif-email');
+  const statusEl = document.getElementById('email-status');
+  const email = emailEl ? emailEl.value.trim() : '';
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (statusEl) { statusEl.textContent = 'Inserisci un indirizzo email valido.'; statusEl.style.color = '#b91c1c'; }
+    return;
+  }
+  if (statusEl) { statusEl.textContent = 'Invio in corso...'; statusEl.style.color = '#6b7280'; }
+  try {
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: EMAILJS_SERVICE,
+        template_id: EMAILJS_TEMPLATE,
+        user_id: EMAILJS_KEY,
+        template_params: {
+          to_email: email,
+          domain: lastDomain,
+          message: `Il dominio ${lastDomain} è libero! Registralo subito prima che qualcun altro lo prenda.`
+        }
+      })
+    });
+    if (res.ok) {
+      if (statusEl) { statusEl.textContent = `✓ Email inviata a ${email}`; statusEl.style.color = '#15803d'; }
+      setTimeout(() => addBubble('bot', 'Notifica inviata! Vuoi controllare un altro dominio?'), 400);
+    } else {
+      if (statusEl) { statusEl.textContent = 'Errore. Configura EmailJS con le tue credenziali.'; statusEl.style.color = '#b91c1c'; }
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.textContent = 'Errore di connessione.'; statusEl.style.color = '#b91c1c'; }
+  }
+};
+
+window.skipEmail = function () {
+  setTimeout(() => addBubble('bot', 'Ok! Vuoi controllare un altro dominio?'), 100);
+};
+
+async function handleInput() {
+  if (busy) return;
+  const val = inputEl.value.trim();
+  if (!val) return;
+  inputEl.value = '';
+  addBubble('user', val);
+  busy = true;
+  await handleDomain(val);
+  busy = false;
+}
+
+sendBtn.addEventListener('click', handleInput);
+inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleInput(); });
+
+// Messaggio di benvenuto
+setTimeout(() => {
+  addBubble('bot', '👋 Ciao! Dimmi un dominio da verificare, es. <strong>miosito.com</strong> o <strong>brand.it</strong>.');
+}, 300);
+</script>
+</body>
+</html>

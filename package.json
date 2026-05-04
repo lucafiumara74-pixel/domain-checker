@@ -1,0 +1,12 @@
+{
+  "name": "domain-checker",
+  "version": "1.0.0",
+  "description": "Chatbot per verifica disponibilità domini con notifica email",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
